@@ -110,10 +110,18 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
         {files.map((file) => (
           <div
             key={file.id}
-            className={`gallery__strip-item${selectedImage?.id === file.id ? ' gallery__strip-item--active' : ''}`}
-            onClick={() => handleImageClick(file)}
+            className={`gallery__strip-item${selectedImage?.id === file.id ? ' gallery__strip-item--active' : ''}${file.uploadState === 'uploading' ? ' gallery__strip-item--uploading' : ''}`}
+            onClick={() => file.uploadState !== 'uploading' && handleImageClick(file)}
           >
             <img src={file.url} alt={file.name} className="gallery__strip-thumb" />
+            {file.uploadState === 'uploading' && (
+              <div className="gallery__strip-overlay">
+                <div className="gallery__strip-spinner" />
+              </div>
+            )}
+            {file.uploadState === 'error' && (
+              <div className="gallery__strip-badge gallery__strip-badge--error" title="Upload failed">!</div>
+            )}
           </div>
         ))}
       </div>

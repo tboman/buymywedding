@@ -74,12 +74,6 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
     [files, onChange, uploadFile]
   );
 
-  const removeFile = (id: string) => {
-    const file = files.find((f) => f.id === id);
-    if (file?.url.startsWith('blob:')) URL.revokeObjectURL(file.url);
-    onChange((prev) => prev.filter((f) => f.id !== id));
-  };
-
   const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setDragging(true); };
   const onDragLeave = () => setDragging(false);
   const onDrop = (e: React.DragEvent) => {
@@ -156,43 +150,6 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
         </button>
       </div>
 
-      {/* Thumbnail strip */}
-      {files.length > 0 && (
-        <div className="uploader__thumbnails">
-          {files.map((file) => (
-            <div key={file.id} className={`uploader__thumb uploader__thumb--${file.uploadState}`}>
-              <img src={file.url} alt={file.name} className="uploader__thumb-img" />
-
-              {file.uploadState === 'uploading' && (
-                <div className="uploader__thumb-overlay">
-                  <div className="uploader__spinner" />
-                </div>
-              )}
-              {file.uploadState === 'done' && (
-                <div className="uploader__thumb-badge uploader__thumb-badge--done" title="Saved to cloud">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                </div>
-              )}
-              {file.uploadState === 'error' && (
-                <div className="uploader__thumb-badge uploader__thumb-badge--error" title="Upload failed">
-                  !
-                </div>
-              )}
-
-              <button
-                type="button"
-                className="uploader__thumb-remove"
-                onClick={() => removeFile(file.id)}
-                aria-label={`Remove ${file.name}`}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
