@@ -1,0 +1,197 @@
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+/* Thumbnail strip */
+.gallery__strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.gallery__strip-item {
+  width: 80px;
+  height: 80px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.gallery__strip-item:hover {
+  border-color: var(--color-blush);
+  box-shadow: var(--shadow-sm);
+}
+
+.gallery__strip-item--active {
+  border-color: var(--color-rose);
+  box-shadow: 0 0 0 2px var(--color-blush-light);
+}
+
+.gallery__strip-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Tagger view */
+.gallery__tagger {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.gallery__tagger-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+}
+
+.gallery__tagger-canvas {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: crosshair;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-light);
+}
+
+.gallery__tagger-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  max-height: 60vh;
+  object-fit: contain;
+}
+
+/* Tag dot */
+.gallery__tag {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 5;
+}
+
+.gallery__tag-dot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: var(--color-rose);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: default;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  border: 2px solid white;
+}
+
+.gallery__tag-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-dark);
+  color: white;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  flex-direction: column;
+  gap: 2px;
+  box-shadow: var(--shadow-md);
+}
+
+.gallery__tag-tooltip strong {
+  font-weight: 600;
+}
+
+.gallery__tag-tooltip span {
+  color: var(--color-gold-light);
+  font-size: 0.72rem;
+}
+
+.gallery__tag:hover .gallery__tag-tooltip {
+  display: flex;
+}
+
+/* New tag form popover */
+.gallery__tag-form {
+  position: absolute;
+  z-index: 20;
+  transform: translate(-50%, 8px);
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 220px;
+}
+
+.gallery__tag-input {
+  padding: 0.5rem 0.75rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-bg);
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.gallery__tag-input:focus {
+  border-color: var(--color-blush-deep);
+}
+
+.gallery__tag-form-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.gallery__tag-save {
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--color-rose);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.gallery__tag-save:hover {
+  background: var(--color-rose-dark);
+}
+
+.gallery__tag-cancel {
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.gallery__tag-cancel:hover {
+  border-color: var(--color-blush);
+  color: var(--color-text);
+}

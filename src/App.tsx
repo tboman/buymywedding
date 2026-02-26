@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from './firebase';
 import Login from './components/Login';
-import DrivePicker from './components/DrivePicker';
+import PhotoUploader, { type UploadedFile } from './components/PhotoUploader';
 import PhotoGallery from './components/PhotoGallery';
 import LandingPage from './components/LandingPage';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -24,7 +24,7 @@ function App() {
     });
   };
 
-  const handleFilesSelected = (files: any[]) => {
+  const handleFilesSelected = (files: UploadedFile[]) => {
     setSelectedFiles(files);
   };
 
@@ -64,7 +64,7 @@ function App() {
           <h2 className="dashboard__title">
             Your <span>Photo Gallery</span>
           </h2>
-          <DrivePicker onFilesSelected={handleFilesSelected} />
+          <PhotoUploader onFilesSelected={handleFilesSelected} existingFiles={selectedFiles} />
           <PhotoGallery files={selectedFiles} />
         </main>
       ) : (
