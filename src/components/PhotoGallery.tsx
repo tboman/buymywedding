@@ -3,9 +3,9 @@ import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import type { UploadedFile } from './PhotoUploader';
 
-// Use driveId as the stable imageId when available, fall back to local id
+// Use storagePath as the stable imageId when available, fall back to local id
 function imageId(file: UploadedFile): string {
-  return file.driveId ?? file.id;
+  return file.storagePath ?? file.id;
 }
 import './PhotoGallery.css';
 

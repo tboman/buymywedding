@@ -1,14 +1,14 @@
-import { useRef, useState, useCallback, useEffect } from 'react';
-import { loadGis, getAccessToken, uploadToDrive, makePublic, driveImgUrl } from '../lib/driveUpload';
+import { useRef, useState, useCallback } from 'react';
+import { uploadToStorage } from '../lib/storageUpload';
 import './PhotoUploader.css';
 
 export type UploadState = 'idle' | 'uploading' | 'done' | 'error';
 
 export interface UploadedFile {
-  id: string;          // local stable id (name-size-lastModified)
+  id: string;            // stable local id (name-size-lastModified)
   name: string;
-  url: string;         // local blob URL (always available)
-  driveId?: string;    // Google Drive file ID (set after upload)
+  url: string;           // blob URL initially, then Firebase Storage download URL
+  storagePath?: string;  // set after successful upload
   uploadState: UploadState;
 }
 
@@ -31,36 +31,23 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
-  // Load GIS script eagerly so the first upload is fast
-  useEffect(() => { loadGis().catch(() => {}); }, []);
-
-  // Update a single file in the array by id
   const updateFile = useCallback(
     (id: string, patch: Partial<UploadedFile>) => {
-      onChange(
-        files.map((f) => (f.id === id ? { ...f, ...patch } : f))
-      );
+      onChange(files.map((f) => (f.id === id ? { ...f, ...patch } : f)));
     },
     [files, onChange]
   );
 
   const uploadFile = useCallback(
-    async (uploaded: UploadedFile, rawFile: File) => {
+    async (uploaded: UploadedFile, raw: File) => {
+      updateFile(uploaded.id, { uploadState: 'uploading' });
       try {
-        await loadGis();
-        const token = await getAccessToken();
-
-        updateFile(uploaded.id, { uploadState: 'uploading' });
-        const driveId = await uploadToDrive(rawFile, token);
-        await makePublic(driveId, token);
-
-        updateFile(uploaded.id, {
-          driveId,
-          url: driveImgUrl(driveId), // switch to persistent Drive URL
-          uploadState: 'done',
-        });
+        const { storagePath, url } = await uploadToStorage(raw, uploaded.id);
+        // Revoke blob URL now that we have a permanent one
+        URL.revokeObjectURL(uploaded.url);
+        updateFile(uploaded.id, { storagePath, url, uploadState: 'done' });
       } catch (err) {
-        console.error('Drive upload error:', err);
+        console.error('Storage upload error:', err);
         updateFile(uploaded.id, { uploadState: 'error' });
       }
     },
@@ -80,11 +67,7 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
       }
 
       if (toAdd.length === 0) return;
-
-      const next = [...files, ...toAdd.map((t) => t.uploaded)];
-      onChange(next);
-
-      // Kick off Drive uploads (async, will call updateFile when done)
+      onChange([...files, ...toAdd.map((t) => t.uploaded)]);
       toAdd.forEach(({ uploaded, raw }) => uploadFile(uploaded, raw));
     },
     [files, onChange, uploadFile]
@@ -92,8 +75,7 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
 
   const removeFile = (id: string) => {
     const file = files.find((f) => f.id === id);
-    // Revoke the blob URL only — Drive URL is a plain https URL
-    if (file && file.url.startsWith('blob:')) URL.revokeObjectURL(file.url);
+    if (file?.url.startsWith('blob:')) URL.revokeObjectURL(file.url);
     onChange(files.filter((f) => f.id !== id));
   };
 
@@ -144,7 +126,7 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
           </svg>
         </div>
         <p className="uploader__dropzone-text">Drag photos here, or click to browse</p>
-        <p className="uploader__dropzone-sub">Photos are saved to your Google Drive</p>
+        <p className="uploader__dropzone-sub">PNG, JPG, WEBP — stored securely in the cloud</p>
       </div>
 
       {/* Buttons */}
@@ -180,21 +162,20 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
             <div key={file.id} className={`uploader__thumb uploader__thumb--${file.uploadState}`}>
               <img src={file.url} alt={file.name} className="uploader__thumb-img" />
 
-              {/* Upload state overlay */}
               {file.uploadState === 'uploading' && (
                 <div className="uploader__thumb-overlay">
                   <div className="uploader__spinner" />
                 </div>
               )}
               {file.uploadState === 'done' && (
-                <div className="uploader__thumb-badge uploader__thumb-badge--done" title="Saved to Google Drive">
+                <div className="uploader__thumb-badge uploader__thumb-badge--done" title="Saved to cloud">
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 </div>
               )}
               {file.uploadState === 'error' && (
-                <div className="uploader__thumb-badge uploader__thumb-badge--error" title="Upload failed — click to retry">
+                <div className="uploader__thumb-badge uploader__thumb-badge--error" title="Upload failed">
                   !
                 </div>
               )}
