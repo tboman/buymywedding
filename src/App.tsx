@@ -5,15 +5,30 @@ import Login from './components/Login';
 import PhotoUploader, { type UploadedFile } from './components/PhotoUploader';
 import PhotoGallery from './components/PhotoGallery';
 import LandingPage from './components/LandingPage';
+import { loadUserFiles } from './lib/storageUpload';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
+  const [loadingFiles, setLoadingFiles] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        setLoadingFiles(true);
+        try {
+          const files = await loadUserFiles(currentUser.uid);
+          setSelectedFiles(files);
+        } catch (err) {
+          console.error('Failed to load files:', err);
+        } finally {
+          setLoadingFiles(false);
+        }
+      } else {
+        setSelectedFiles([]);
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -60,8 +75,14 @@ function App() {
           <h2 className="dashboard__title">
             Your <span>Photo Gallery</span>
           </h2>
-          <PhotoUploader files={selectedFiles} onChange={setSelectedFiles} />
-          <PhotoGallery files={selectedFiles} />
+          {loadingFiles ? (
+            <p className="dashboard__loading">Loading your photos…</p>
+          ) : (
+            <>
+              <PhotoUploader files={selectedFiles} onChange={setSelectedFiles} />
+              <PhotoGallery files={selectedFiles} />
+            </>
+          )}
         </main>
       ) : (
         <LandingPage />

@@ -120,6 +120,12 @@
   color: var(--color-rose);
 }
 
+.dashboard__loading {
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+  padding: var(--space-xl) 0;
+}
+
 @media (max-width: 768px) {
   .site-nav__inner {
     padding: 0 var(--space-md);
