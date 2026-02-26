@@ -12,6 +12,7 @@
 }
 
 .gallery__strip-item {
+  position: relative;
   width: 80px;
   height: 80px;
   border-radius: var(--radius-md);
