@@ -1,54 +1,102 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { loadGis, getAccessToken, uploadToDrive, makePublic, driveImgUrl } from '../lib/driveUpload';
 import './PhotoUploader.css';
 
+export type UploadState = 'idle' | 'uploading' | 'done' | 'error';
+
 export interface UploadedFile {
-  id: string;
+  id: string;          // local stable id (name-size-lastModified)
   name: string;
-  url: string; // object URL
+  url: string;         // local blob URL (always available)
+  driveId?: string;    // Google Drive file ID (set after upload)
+  uploadState: UploadState;
 }
 
 interface PhotoUploaderProps {
-  onFilesSelected: (files: UploadedFile[]) => void;
-  existingFiles: UploadedFile[];
+  files: UploadedFile[];
+  onChange: (files: UploadedFile[]) => void;
 }
 
-function fileToUploaded(file: File): UploadedFile {
-  // Stable-ish id from name + size + lastModified
-  const id = `${file.name}-${file.size}-${file.lastModified}`;
-  return { id, name: file.name, url: URL.createObjectURL(file) };
+function makeLocalFile(file: File): UploadedFile {
+  return {
+    id: `${file.name}-${file.size}-${file.lastModified}`,
+    name: file.name,
+    url: URL.createObjectURL(file),
+    uploadState: 'idle',
+  };
 }
 
-export default function PhotoUploader({ onFilesSelected, existingFiles }: PhotoUploaderProps) {
+export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
+  // Load GIS script eagerly so the first upload is fast
+  useEffect(() => { loadGis().catch(() => {}); }, []);
+
+  // Update a single file in the array by id
+  const updateFile = useCallback(
+    (id: string, patch: Partial<UploadedFile>) => {
+      onChange(
+        files.map((f) => (f.id === id ? { ...f, ...patch } : f))
+      );
+    },
+    [files, onChange]
+  );
+
+  const uploadFile = useCallback(
+    async (uploaded: UploadedFile, rawFile: File) => {
+      try {
+        await loadGis();
+        const token = await getAccessToken();
+
+        updateFile(uploaded.id, { uploadState: 'uploading' });
+        const driveId = await uploadToDrive(rawFile, token);
+        await makePublic(driveId, token);
+
+        updateFile(uploaded.id, {
+          driveId,
+          url: driveImgUrl(driveId), // switch to persistent Drive URL
+          uploadState: 'done',
+        });
+      } catch (err) {
+        console.error('Drive upload error:', err);
+        updateFile(uploaded.id, { uploadState: 'error' });
+      }
+    },
+    [updateFile]
+  );
+
   const addFiles = useCallback(
     (incoming: FileList | null) => {
       if (!incoming || incoming.length === 0) return;
-      const existingIds = new Set(existingFiles.map((f) => f.id));
-      const newFiles: UploadedFile[] = [];
-      for (const file of Array.from(incoming)) {
-        if (!file.type.startsWith('image/')) continue;
-        const uploaded = fileToUploaded(file);
-        if (!existingIds.has(uploaded.id)) {
-          newFiles.push(uploaded);
-        }
+      const existingIds = new Set(files.map((f) => f.id));
+      const toAdd: { uploaded: UploadedFile; raw: File }[] = [];
+
+      for (const raw of Array.from(incoming)) {
+        if (!raw.type.startsWith('image/')) continue;
+        const uploaded = makeLocalFile(raw);
+        if (!existingIds.has(uploaded.id)) toAdd.push({ uploaded, raw });
       }
-      if (newFiles.length > 0) {
-        onFilesSelected([...existingFiles, ...newFiles]);
-      }
+
+      if (toAdd.length === 0) return;
+
+      const next = [...files, ...toAdd.map((t) => t.uploaded)];
+      onChange(next);
+
+      // Kick off Drive uploads (async, will call updateFile when done)
+      toAdd.forEach(({ uploaded, raw }) => uploadFile(uploaded, raw));
     },
-    [existingFiles, onFilesSelected]
+    [files, onChange, uploadFile]
   );
 
   const removeFile = (id: string) => {
-    const file = existingFiles.find((f) => f.id === id);
-    if (file) URL.revokeObjectURL(file.url);
-    onFilesSelected(existingFiles.filter((f) => f.id !== id));
+    const file = files.find((f) => f.id === id);
+    // Revoke the blob URL only — Drive URL is a plain https URL
+    if (file && file.url.startsWith('blob:')) URL.revokeObjectURL(file.url);
+    onChange(files.filter((f) => f.id !== id));
   };
 
-  // Drag & drop handlers
   const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setDragging(true); };
   const onDragLeave = () => setDragging(false);
   const onDrop = (e: React.DragEvent) => {
@@ -59,14 +107,13 @@ export default function PhotoUploader({ onFilesSelected, existingFiles }: PhotoU
 
   return (
     <div className="uploader">
-      {/* Hidden inputs */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
         multiple
         style={{ display: 'none' }}
-        onChange={(e) => addFiles(e.target.files)}
+        onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
       />
       <input
         ref={cameraInputRef}
@@ -74,7 +121,7 @@ export default function PhotoUploader({ onFilesSelected, existingFiles }: PhotoU
         accept="image/*"
         capture="environment"
         style={{ display: 'none' }}
-        onChange={(e) => addFiles(e.target.files)}
+        onChange={(e) => { addFiles(e.target.files); e.target.value = ''; }}
       />
 
       {/* Drop zone */}
@@ -97,10 +144,10 @@ export default function PhotoUploader({ onFilesSelected, existingFiles }: PhotoU
           </svg>
         </div>
         <p className="uploader__dropzone-text">Drag photos here, or click to browse</p>
-        <p className="uploader__dropzone-sub">PNG, JPG, WEBP supported</p>
+        <p className="uploader__dropzone-sub">Photos are saved to your Google Drive</p>
       </div>
 
-      {/* Action buttons */}
+      {/* Buttons */}
       <div className="uploader__actions">
         <button
           type="button"
@@ -127,11 +174,31 @@ export default function PhotoUploader({ onFilesSelected, existingFiles }: PhotoU
       </div>
 
       {/* Thumbnail strip */}
-      {existingFiles.length > 0 && (
+      {files.length > 0 && (
         <div className="uploader__thumbnails">
-          {existingFiles.map((file) => (
-            <div key={file.id} className="uploader__thumb">
+          {files.map((file) => (
+            <div key={file.id} className={`uploader__thumb uploader__thumb--${file.uploadState}`}>
               <img src={file.url} alt={file.name} className="uploader__thumb-img" />
+
+              {/* Upload state overlay */}
+              {file.uploadState === 'uploading' && (
+                <div className="uploader__thumb-overlay">
+                  <div className="uploader__spinner" />
+                </div>
+              )}
+              {file.uploadState === 'done' && (
+                <div className="uploader__thumb-badge uploader__thumb-badge--done" title="Saved to Google Drive">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                </div>
+              )}
+              {file.uploadState === 'error' && (
+                <div className="uploader__thumb-badge uploader__thumb-badge--error" title="Upload failed — click to retry">
+                  !
+                </div>
+              )}
+
               <button
                 type="button"
                 className="uploader__thumb-remove"

@@ -64,7 +64,7 @@ function App() {
           <h2 className="dashboard__title">
             Your <span>Photo Gallery</span>
           </h2>
-          <PhotoUploader onFilesSelected={handleFilesSelected} existingFiles={selectedFiles} />
+          <PhotoUploader files={selectedFiles} onChange={handleFilesSelected} />
           <PhotoGallery files={selectedFiles} />
         </main>
       ) : (

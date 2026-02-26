@@ -2,6 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import type { UploadedFile } from './PhotoUploader';
+
+// Use driveId as the stable imageId when available, fall back to local id
+function imageId(file: UploadedFile): string {
+  return file.driveId ?? file.id;
+}
 import './PhotoGallery.css';
 
 interface PhotoGalleryProps {
@@ -35,14 +40,15 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
   useEffect(() => {
     const fetchTags = async () => {
       if (selectedImage && auth.currentUser) {
+        const imgId = imageId(selectedImage);
         const q = query(
           collection(db, 'tags'),
           where('userId', '==', auth.currentUser.uid),
-          where('imageId', '==', selectedImage.id)
+          where('imageId', '==', imgId)
         );
         const snapshot = await getDocs(q);
         const fetched: Tag[] = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Tag));
-        setImageTags((prev) => ({ ...prev, [selectedImage.id]: fetched }));
+        setImageTags((prev) => ({ ...prev, [imgId]: fetched }));
       }
     };
     fetchTags();
@@ -74,7 +80,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
     if (!selectedImage || !newTagPosition || !newTagDescription.trim() || !auth.currentUser) return;
     const data: NewTagData = {
       userId: auth.currentUser.uid,
-      imageId: selectedImage.id,
+      imageId: imageId(selectedImage),
       x: newTagPosition.x,
       y: newTagPosition.y,
       description: newTagDescription.trim(),
@@ -82,9 +88,10 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
     };
     try {
       const docRef = await addDoc(collection(db, 'tags'), data);
+      const imgId = imageId(selectedImage);
       setImageTags((prev) => ({
         ...prev,
-        [selectedImage.id]: [...(prev[selectedImage.id] || []), { id: docRef.id, ...data }],
+        [imgId]: [...(prev[imgId] || []), { id: docRef.id, ...data }],
       }));
       setNewTagPosition(null);
       setNewTagDescription('');
@@ -127,7 +134,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
             />
 
             {/* Existing tags */}
-            {imageTags[selectedImage.id]?.map((tag, i) => (
+            {imageTags[imageId(selectedImage)]?.map((tag, i) => (
               <div
                 key={tag.id || i}
                 className="gallery__tag"
