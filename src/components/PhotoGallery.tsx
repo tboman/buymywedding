@@ -11,6 +11,7 @@ import './PhotoGallery.css';
 
 interface PhotoGalleryProps {
   files: UploadedFile[];
+  onDelete: (file: UploadedFile) => void;
 }
 
 interface Tag {
@@ -29,13 +30,21 @@ interface ImageTags {
   [imageId: string]: Tag[];
 }
 
-const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
+const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
   const [selectedImage, setSelectedImage] = useState<UploadedFile | null>(null);
   const [imageTags, setImageTags] = useState<ImageTags>({});
   const [newTagPosition, setNewTagPosition] = useState<{ x: number; y: number } | null>(null);
   const [newTagDescription, setNewTagDescription] = useState('');
   const [newTagPrice, setNewTagPrice] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<UploadedFile | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    if (selectedImage?.id === pendingDelete.id) setSelectedImage(null);
+    onDelete(pendingDelete);
+    setPendingDelete(null);
+  };
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -122,6 +131,18 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
             {file.uploadState === 'error' && (
               <div className="gallery__strip-badge gallery__strip-badge--error" title="Upload failed">!</div>
             )}
+            {file.uploadState !== 'uploading' && (
+              <button
+                className="gallery__strip-delete"
+                onClick={(e) => { e.stopPropagation(); setPendingDelete(file); }}
+                aria-label={`Delete ${file.name}`}
+                title="Delete photo"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+                </svg>
+              </button>
+            )}
           </div>
         ))}
       </div>
@@ -186,6 +207,25 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files }) => {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+      {/* Confirmation modal */}
+      {pendingDelete && (
+        <div className="gallery__modal-backdrop" onClick={() => setPendingDelete(null)}>
+          <div className="gallery__modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h3 className="gallery__modal-title">Delete photo?</h3>
+            <p className="gallery__modal-body">
+              <strong>{pendingDelete.name}</strong> will be permanently removed from your gallery. This cannot be undone.
+            </p>
+            <div className="gallery__modal-actions">
+              <button className="gallery__modal-cancel" onClick={() => setPendingDelete(null)}>
+                Cancel
+              </button>
+              <button className="gallery__modal-confirm" onClick={confirmDelete}>
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

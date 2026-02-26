@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL, listAll, getMetadata } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, listAll, getMetadata, deleteObject } from 'firebase/storage';
 import { storage, auth } from '../firebase';
 import type { UploadedFile } from '../components/PhotoUploader';
 
@@ -48,4 +48,9 @@ export async function loadUserFiles(uid: string): Promise<UploadedFile[]> {
   );
 
   return files;
+}
+
+/** Deletes a file from Firebase Storage by its storage path. */
+export async function deleteFromStorage(storagePath: string): Promise<void> {
+  await deleteObject(ref(storage, storagePath));
 }

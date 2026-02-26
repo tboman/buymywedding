@@ -5,7 +5,7 @@ import Login from './components/Login';
 import PhotoUploader, { type UploadedFile } from './components/PhotoUploader';
 import PhotoGallery from './components/PhotoGallery';
 import LandingPage from './components/LandingPage';
-import { loadUserFiles } from './lib/storageUpload';
+import { loadUserFiles, deleteFromStorage } from './lib/storageUpload';
 import './App.css';
 
 function App() {
@@ -32,6 +32,15 @@ function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  const handleDelete = (file: UploadedFile) => {
+    setSelectedFiles((prev) => prev.filter((f) => f.id !== file.id));
+    if (file.storagePath) {
+      deleteFromStorage(file.storagePath).catch((err) =>
+        console.error('Storage delete failed:', err)
+      );
+    }
+  };
 
   const handleLogout = () => {
     signOut(auth).catch((error) => {
@@ -80,7 +89,7 @@ function App() {
           ) : (
             <>
               <PhotoUploader files={selectedFiles} onChange={setSelectedFiles} />
-              <PhotoGallery files={selectedFiles} />
+              <PhotoGallery files={selectedFiles} onDelete={handleDelete} />
             </>
           )}
         </main>

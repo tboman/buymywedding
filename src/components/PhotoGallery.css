@@ -86,6 +86,33 @@
   object-fit: cover;
 }
 
+.gallery__strip-delete {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: rgba(28, 25, 23, 0.72);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+  padding: 0;
+}
+
+.gallery__strip-item:hover .gallery__strip-delete {
+  opacity: 1;
+}
+
+.gallery__strip-delete:hover {
+  background: #c0392b;
+}
+
 /* Tagger view */
 .gallery__tagger {
   display: flex;
@@ -242,4 +269,87 @@
 .gallery__tag-cancel:hover {
   border-color: var(--color-blush);
   color: var(--color-text);
+}
+
+/* ── Confirmation modal ──────────────────────────────────── */
+.gallery__modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 25, 23, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: var(--space-md);
+}
+
+.gallery__modal {
+  background: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl) var(--space-2xl);
+  max-width: 400px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+.gallery__modal-title {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-md);
+}
+
+.gallery__modal-body {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+  margin-bottom: var(--space-xl);
+}
+
+.gallery__modal-body strong {
+  color: var(--color-text);
+  font-weight: 600;
+  word-break: break-all;
+}
+
+.gallery__modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+}
+
+.gallery__modal-cancel {
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1.5px solid var(--color-border);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.gallery__modal-cancel:hover {
+  border-color: var(--color-blush);
+  color: var(--color-text);
+}
+
+.gallery__modal-confirm {
+  padding: 0.6rem 1.25rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #c0392b;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.gallery__modal-confirm:hover {
+  background: #a93226;
 }
