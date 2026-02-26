@@ -3,16 +3,17 @@ import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
 import { auth } from './firebase';
 import Login from './components/Login';
 import DrivePicker from './components/DrivePicker';
-import PhotoGallery from './components/PhotoGallery'; // Import PhotoGallery
+import PhotoGallery from './components/PhotoGallery';
+import LandingPage from './components/LandingPage';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [selectedFiles, setSelectedFiles] = useState<any[]>([]); // State to hold selected files
+  const [selectedFiles, setSelectedFiles] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
     });
     return () => unsubscribe();
   }, []);
@@ -28,31 +29,48 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Buy My Wedding</h1>
-        {user ? (
-          <div>
-            <img src={user.photoURL || ''} alt={user.displayName || ''} width="50" height="50" />
-            <span>Welcome, {user.displayName}</span>
-            <button onClick={handleLogout}>Logout</button>
+    <>
+      <nav className="site-nav">
+        <div className="site-nav__inner">
+          <a href="/" className="site-nav__logo">
+            Buy My <span>Wedding</span>
+          </a>
+          <div className="site-nav__actions">
+            {user ? (
+              <div className="user-menu">
+                {user.photoURL && (
+                  <img
+                    className="user-avatar"
+                    src={user.photoURL}
+                    alt={user.displayName || 'User'}
+                    width="36"
+                    height="36"
+                  />
+                )}
+                <span className="user-name">{user.displayName}</span>
+                <button className="btn-logout" onClick={handleLogout}>
+                  Sign out
+                </button>
+              </div>
+            ) : (
+              <Login />
+            )}
           </div>
-        ) : (
-          <Login />
-        )}
-      </header>
-      <main>
-        {user ? (
-          <div>
-            <h2>Your Photo Gallery</h2>
-            <DrivePicker onFilesSelected={handleFilesSelected} /> {/* Pass the callback */}
-            <PhotoGallery files={selectedFiles} /> {/* Render PhotoGallery with selected files */}
-          </div>
-        ) : (
-          <p>Please log in to manage your photos.</p>
-        )}
-      </main>
-    </div>
+        </div>
+      </nav>
+
+      {user ? (
+        <main className="dashboard">
+          <h2 className="dashboard__title">
+            Your <span>Photo Gallery</span>
+          </h2>
+          <DrivePicker onFilesSelected={handleFilesSelected} />
+          <PhotoGallery files={selectedFiles} />
+        </main>
+      ) : (
+        <LandingPage />
+      )}
+    </>
   );
 }
 
