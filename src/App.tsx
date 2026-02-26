@@ -24,10 +24,6 @@ function App() {
     });
   };
 
-  const handleFilesSelected = (files: UploadedFile[]) => {
-    setSelectedFiles(files);
-  };
-
   return (
     <>
       <nav className="site-nav">
@@ -64,7 +60,7 @@ function App() {
           <h2 className="dashboard__title">
             Your <span>Photo Gallery</span>
           </h2>
-          <PhotoUploader files={selectedFiles} onChange={handleFilesSelected} />
+          <PhotoUploader files={selectedFiles} onChange={setSelectedFiles} />
           <PhotoGallery files={selectedFiles} />
         </main>
       ) : (

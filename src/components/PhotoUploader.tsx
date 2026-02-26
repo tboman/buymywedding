@@ -14,7 +14,7 @@ export interface UploadedFile {
 
 interface PhotoUploaderProps {
   files: UploadedFile[];
-  onChange: (files: UploadedFile[]) => void;
+  onChange: React.Dispatch<React.SetStateAction<UploadedFile[]>>;
 }
 
 function makeLocalFile(file: File): UploadedFile {
@@ -33,9 +33,10 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
 
   const updateFile = useCallback(
     (id: string, patch: Partial<UploadedFile>) => {
-      onChange(files.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+      // Functional updater — always operates on latest state, never a stale snapshot
+      onChange((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
     },
-    [files, onChange]
+    [onChange]
   );
 
   const uploadFile = useCallback(
@@ -67,7 +68,7 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
       }
 
       if (toAdd.length === 0) return;
-      onChange([...files, ...toAdd.map((t) => t.uploaded)]);
+      onChange((prev) => [...prev, ...toAdd.map((t) => t.uploaded)]);
       toAdd.forEach(({ uploaded, raw }) => uploadFile(uploaded, raw));
     },
     [files, onChange, uploadFile]
@@ -76,7 +77,7 @@ export default function PhotoUploader({ files, onChange }: PhotoUploaderProps) {
   const removeFile = (id: string) => {
     const file = files.find((f) => f.id === id);
     if (file?.url.startsWith('blob:')) URL.revokeObjectURL(file.url);
-    onChange(files.filter((f) => f.id !== id));
+    onChange((prev) => prev.filter((f) => f.id !== id));
   };
 
   const onDragOver = (e: React.DragEvent) => { e.preventDefault(); setDragging(true); };
