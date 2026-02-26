@@ -12,6 +12,7 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [view, setView] = useState<'home' | 'dashboard'>('home');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -28,6 +29,7 @@ function App() {
         }
       } else {
         setSelectedFiles([]);
+        setView('home');
       }
     });
     return () => unsubscribe();
@@ -52,12 +54,18 @@ function App() {
     <>
       <nav className="site-nav">
         <div className="site-nav__inner">
-          <a href="/" className="site-nav__logo">
+          <button className="site-nav__logo" onClick={() => setView('home')}>
             Buy My <span>Wedding</span>
-          </a>
+          </button>
           <div className="site-nav__actions">
             {user ? (
               <div className="user-menu">
+                <button
+                  className={`nav-link${view === 'dashboard' ? ' nav-link--active' : ''}`}
+                  onClick={() => setView('dashboard')}
+                >
+                  My Listings
+                </button>
                 {user.photoURL && (
                   <img
                     className="user-avatar"
@@ -79,7 +87,7 @@ function App() {
         </div>
       </nav>
 
-      {user ? (
+      {view === 'dashboard' && user ? (
         <main className="dashboard">
           <h2 className="dashboard__title">
             Your <span>Photo Gallery</span>

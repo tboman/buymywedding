@@ -39,6 +39,10 @@
   letter-spacing: -0.01em;
   white-space: nowrap;
   flex-shrink: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .site-nav__logo span {
@@ -50,6 +54,29 @@
   align-items: center;
   gap: var(--space-md);
   flex-shrink: 0;
+}
+
+.nav-link {
+  background: none;
+  border: none;
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.nav-link:hover {
+  color: var(--color-text);
+  background: var(--color-bg-blush);
+}
+
+.nav-link--active {
+  color: var(--color-rose);
+  font-weight: 600;
 }
 
 /* ============================================================
