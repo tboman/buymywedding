@@ -15,16 +15,15 @@ import { getFirestore } from "firebase/firestore";
 // 4. In the "General" tab, scroll down to the "Your apps" section.
 // 5. Click on the "</>" icon to see the web app configuration.
 const firebaseConfig = {
-  apiKey: "TODO: REPLACE WITH YOUR API KEY",
-  authDomain: "TODO: REPLACE WITH YOUR AUTH DOMAIN",
-  projectId: "TODO: REPLACE WITH YOUR PROJECT ID",
-  storageBucket: "TODO: REPLACE WITH YOUR STORAGE BUCKET",
-  messagingSenderId: "TODO: REPLACE WITH YOUR MESSAGING SENDER ID",
-  appId: "TODO: REPLACE WITH YOUR APP ID",
-  measurementId: "TODO: REPLACE WITH YOUR MEASUREMENT ID"
+  apiKey: "AIzaSyD1CdiDaRLhZQAweI7E_ursIqKnCvjaDsw",
+  authDomain: "buymywedding-21.firebaseapp.com",
+  projectId: "buymywedding-21",
+  storageBucket: "buymywedding-21.firebasestorage.app",
+  messagingSenderId: "1069609682643",
+  appId: "1:1069609682643:web:cb873fa8cffd00a5f53626"
 };
 
-export const googleDriveClientId = "TODO: REPLACE WITH YOUR GOOGLE DRIVE CLIENT ID";
+export const googleDriveClientId = "463578001384-sf733eo0vbk3votsoha1sk305gkdppn6.apps.googleusercontent.com";
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
