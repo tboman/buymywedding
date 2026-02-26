@@ -1,68 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
+import { db } from '../firebase';
 import './LandingPage.css';
 
 /* ──────────────────────────────────────────────────────────
    Data
    ────────────────────────────────────────────────────────── */
 
-const galleryItems = [
-  {
-    id: 1,
-    name: 'Ivory Lace Bridal Gown',
-    price: '£480',
-    src: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=600&q=80',
-    alt: 'Ivory lace bridal gown',
-  },
-  {
-    id: 2,
-    name: 'Gold Floral Centrepieces',
-    price: '£120 set',
-    src: 'https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=600&q=80',
-    alt: 'Gold floral centrepieces',
-  },
-  {
-    id: 3,
-    name: 'Blush Bridesmaid Dresses',
-    price: '£95 each',
-    src: 'https://images.unsplash.com/photo-1561089489-f13d5e730d72?w=600&q=80',
-    alt: 'Blush bridesmaid dresses',
-  },
-  {
-    id: 4,
-    name: 'Rustic Arch with Florals',
-    price: '£340',
-    src: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=600&q=80',
-    alt: 'Rustic arch with florals',
-  },
-  {
-    id: 5,
-    name: 'Crystal Chandelier',
-    price: '£650',
-    src: 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=600&q=80',
-    alt: 'Crystal chandelier',
-  },
-  {
-    id: 6,
-    name: 'Silk Table Runner Set',
-    price: '£55',
-    src: 'https://images.unsplash.com/photo-1470116945706-e6bf5d5a53ca?w=600&q=80',
-    alt: 'Silk table runners',
-  },
-  {
-    id: 7,
-    name: 'Vintage Photo Booth',
-    price: '£200',
-    src: 'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=600&q=80',
-    alt: 'Vintage photo booth',
-  },
-  {
-    id: 8,
-    name: 'Fairy-light Canopy',
-    price: '£180',
-    src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=600&q=80',
-    alt: 'Fairy-light canopy',
-  },
-];
+interface Listing {
+  id: string;
+  url: string;
+  storagePath: string;
+  name: string;
+}
+
+interface Tag {
+  id: string;
+  description: string;
+  price?: string;
+  x: number;
+  y: number;
+}
 
 const steps = [
   {
@@ -171,6 +129,35 @@ interface ContactForm {
 }
 
 export default function LandingPage() {
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [activeListing, setActiveListing] = useState<Listing | null>(null);
+  const [activeTags, setActiveTags] = useState<Tag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
+
+  useEffect(() => {
+    getDocs(
+      query(collection(db, 'listings'), orderBy('uploadedAt', 'desc'), limit(8))
+    ).then((snap) =>
+      setListings(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Listing)))
+    ).catch(() => {});
+  }, []);
+
+  const openListing = async (listing: Listing) => {
+    setActiveListing(listing);
+    setActiveTags([]);
+    setTagsLoading(true);
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'tags'), where('imageId', '==', listing.storagePath))
+      );
+      setActiveTags(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Tag)));
+    } finally {
+      setTagsLoading(false);
+    }
+  };
+
+  const closeListing = () => { setActiveListing(null); setActiveTags([]); };
+
   const [contactForm, setContactForm] = useState<ContactForm>({
     name: '',
     email: '',
@@ -236,28 +223,36 @@ export default function LandingPage() {
       </section>
 
       {/* ── Public Gallery ───────────────────────────────────── */}
-      <section className="gallery-section" id="gallery">
-        <div className="container">
-          <span className="section-label">Browse Items</span>
-          <h2 className="section-title">Recently Listed</h2>
-          <p className="section-sub">
-            Discover beautiful pre-loved wedding pieces from couples across the UK.
-          </p>
-          <div className="gallery-grid">
-            {galleryItems.map((item) => (
-              <div key={item.id} className="gallery-card">
-                <div className="gallery-card__img-wrap">
-                  <img src={item.src} alt={item.alt} className="gallery-card__img" loading="lazy" />
-                  <div className="gallery-card__overlay">
-                    <span className="gallery-card__name">{item.name}</span>
-                    <span className="gallery-card__price">{item.price}</span>
+      {listings.length > 0 && (
+        <section className="gallery-section" id="gallery">
+          <div className="container">
+            <span className="section-label">Browse Items</span>
+            <h2 className="section-title">Recently Listed</h2>
+            <p className="section-sub">
+              Discover beautiful pre-loved wedding pieces from couples across the UK.
+            </p>
+            <div className="gallery-grid">
+              {listings.map((listing) => (
+                <div
+                  key={listing.id}
+                  className="gallery-card"
+                  onClick={() => openListing(listing)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && openListing(listing)}
+                >
+                  <div className="gallery-card__img-wrap">
+                    <img src={listing.url} alt={listing.name} className="gallery-card__img" loading="lazy" />
+                    <div className="gallery-card__overlay">
+                      <span className="gallery-card__name">{listing.name}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ── How It Works ─────────────────────────────────────── */}
       <section className="how-it-works">
@@ -435,6 +430,47 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Listing Modal ────────────────────────────────────── */}
+      {activeListing && (
+        <div className="listing-modal-backdrop" onClick={closeListing}>
+          <div
+            className="listing-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+          >
+            <button className="listing-modal__close" onClick={closeListing} aria-label="Close">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+            <div className="listing-modal__img-wrap">
+              <img src={activeListing.url} alt={activeListing.name} className="listing-modal__img" />
+            </div>
+            <div className="listing-modal__body">
+              <h3 className="listing-modal__title">{activeListing.name}</h3>
+              {tagsLoading ? (
+                <p className="listing-modal__hint">Loading items…</p>
+              ) : activeTags.length === 0 ? (
+                <p className="listing-modal__hint">No tagged items for this listing yet.</p>
+              ) : (
+                <ul className="listing-modal__tags">
+                  {activeTags.map((tag, i) => (
+                    <li key={tag.id} className="listing-modal__tag-item">
+                      <span className="listing-modal__tag-num">{i + 1}</span>
+                      <div>
+                        <div className="listing-modal__tag-desc">{tag.description}</div>
+                        {tag.price && <div className="listing-modal__tag-price">{tag.price}</div>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Footer ───────────────────────────────────────────── */}
       <footer className="site-footer">

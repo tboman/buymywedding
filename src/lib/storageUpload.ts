@@ -1,5 +1,6 @@
 import { ref, uploadBytes, getDownloadURL, listAll, getMetadata, deleteObject } from 'firebase/storage';
-import { storage, auth } from '../firebase';
+import { collection, addDoc, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { storage, auth, db } from '../firebase';
 import type { UploadedFile } from '../components/PhotoUploader';
 
 /**
@@ -20,6 +21,16 @@ export async function uploadToStorage(
     customMetadata: { originalName: file.name },
   });
   const url = await getDownloadURL(storageRef);
+
+  // Publish to Firestore so the landing page can display it
+  await addDoc(collection(db, 'listings'), {
+    url,
+    storagePath,
+    name: file.name,
+    userId: user.uid,
+    uploadedAt: serverTimestamp(),
+  });
+
   return { storagePath, url };
 }
 
@@ -50,7 +61,13 @@ export async function loadUserFiles(uid: string): Promise<UploadedFile[]> {
   return files;
 }
 
-/** Deletes a file from Firebase Storage by its storage path. */
+/** Deletes a file from Firebase Storage and its listing from Firestore. */
 export async function deleteFromStorage(storagePath: string): Promise<void> {
   await deleteObject(ref(storage, storagePath));
+
+  // Remove the listing doc
+  const snap = await getDocs(
+    query(collection(db, 'listings'), where('storagePath', '==', storagePath))
+  );
+  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
 }
