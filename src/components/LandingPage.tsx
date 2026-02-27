@@ -242,10 +242,8 @@ export default function LandingPage() {
                   onKeyDown={(e) => e.key === 'Enter' && openListing(listing)}
                 >
                   <div className="gallery-card__img-wrap">
-                    <img src={listing.url} alt={listing.name} className="gallery-card__img" loading="lazy" />
-                    <div className="gallery-card__overlay">
-                      <span className="gallery-card__name">{listing.name}</span>
-                    </div>
+                    <img src={listing.url} alt="" className="gallery-card__img" loading="lazy" />
+                    <div className="gallery-card__overlay" />
                   </div>
                 </div>
               ))}
@@ -449,7 +447,6 @@ export default function LandingPage() {
               <img src={activeListing.url} alt={activeListing.name} className="listing-modal__img" />
             </div>
             <div className="listing-modal__body">
-              <h3 className="listing-modal__title">{activeListing.name}</h3>
               {tagsLoading ? (
                 <p className="listing-modal__hint">Loading items…</p>
               ) : activeTags.length === 0 ? (
