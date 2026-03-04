@@ -130,9 +130,8 @@ interface ContactForm {
 
 export default function LandingPage() {
   const [listings, setListings] = useState<Listing[]>([]);
+  const [listingTags, setListingTags] = useState<Record<string, Tag[]>>({});
   const [activeListing, setActiveListing] = useState<Listing | null>(null);
-  const [activeTags, setActiveTags] = useState<Tag[]>([]);
-  const [tagsLoading, setTagsLoading] = useState(false);
 
   useEffect(() => {
     getDocs(
@@ -142,21 +141,24 @@ export default function LandingPage() {
     ).catch(() => {});
   }, []);
 
-  const openListing = async (listing: Listing) => {
-    setActiveListing(listing);
-    setActiveTags([]);
-    setTagsLoading(true);
-    try {
-      const snap = await getDocs(
-        query(collection(db, 'tags'), where('imageId', '==', listing.storagePath))
-      );
-      setActiveTags(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Tag)));
-    } finally {
-      setTagsLoading(false);
-    }
-  };
+  useEffect(() => {
+    if (listings.length === 0) return;
+    Promise.all(
+      listings.map(async (listing) => {
+        const snap = await getDocs(
+          query(collection(db, 'tags'), where('imageId', '==', listing.storagePath))
+        );
+        return { path: listing.storagePath, tags: snap.docs.map((d) => ({ id: d.id, ...d.data() } as Tag)) };
+      })
+    ).then((results) => {
+      const map: Record<string, Tag[]> = {};
+      results.forEach(({ path, tags }) => { map[path] = tags; });
+      setListingTags(map);
+    }).catch(() => {});
+  }, [listings]);
 
-  const closeListing = () => { setActiveListing(null); setActiveTags([]); };
+  const openListing = (listing: Listing) => setActiveListing(listing);
+  const closeListing = () => setActiveListing(null);
 
   const [contactForm, setContactForm] = useState<ContactForm>({
     name: '',
@@ -243,7 +245,19 @@ export default function LandingPage() {
                 >
                   <div className="gallery-card__img-wrap">
                     <img src={listing.url} alt="" className="gallery-card__img" loading="lazy" />
-                    <div className="gallery-card__overlay" />
+                    <div className="gallery-card__overlay">
+                      {(listingTags[listing.storagePath] ?? []).length > 0 && (
+                        <ul className="gallery-card__tag-list">
+                          {listingTags[listing.storagePath].map((tag, i) => (
+                            <li key={tag.id} className="gallery-card__tag-item">
+                              <span className="gallery-card__tag-num">{i + 1}</span>
+                              <span className="gallery-card__tag-desc">{tag.description}</span>
+                              {tag.price && <span className="gallery-card__tag-price">{tag.price}</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -447,13 +461,11 @@ export default function LandingPage() {
               <img src={activeListing.url} alt={activeListing.name} className="listing-modal__img" />
             </div>
             <div className="listing-modal__body">
-              {tagsLoading ? (
-                <p className="listing-modal__hint">Loading items…</p>
-              ) : activeTags.length === 0 ? (
+              {(listingTags[activeListing.storagePath] ?? []).length === 0 ? (
                 <p className="listing-modal__hint">No tagged items for this listing yet.</p>
               ) : (
                 <ul className="listing-modal__tags">
-                  {activeTags.map((tag, i) => (
+                  {listingTags[activeListing.storagePath].map((tag, i) => (
                     <li key={tag.id} className="listing-modal__tag-item">
                       <span className="listing-modal__tag-num">{i + 1}</span>
                       <div>

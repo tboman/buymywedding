@@ -194,6 +194,51 @@
   color: var(--color-gold-light);
 }
 
+.gallery-card__tag-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.gallery-card__tag-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.gallery-card__tag-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-rose);
+  color: white;
+  font-size: 0.62rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid white;
+}
+
+.gallery-card__tag-desc {
+  color: white;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gallery-card__tag-price {
+  color: var(--color-gold-light);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* ============================================================
    How It Works
    ============================================================ */
