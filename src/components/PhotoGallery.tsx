@@ -117,11 +117,17 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
     };
     try {
       await updateDoc(doc(db, 'tags', editingTag.id), updates);
+      const localUpdates: Partial<Tag> = {
+        description: newTagDescription.trim(),
+        price: newTagPrice.trim() || undefined,
+        ebayItemNumber: newTagEbayItem.trim() || undefined,
+        craigslistUrl: newTagCraigslistUrl.trim() || undefined,
+      };
       const imgId = imageId(selectedImage);
       setImageTags((prev) => ({
         ...prev,
         [imgId]: (prev[imgId] || []).map((t) =>
-          t.id === editingTag.id ? { ...t, ...updates } : t
+          t.id === editingTag.id ? { ...t, ...localUpdates } : t
         ),
       }));
       setEditingTag(null);
