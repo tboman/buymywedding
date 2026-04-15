@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { collection, query, orderBy, limit, getDocs, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import './LandingPage.css';
@@ -18,6 +18,8 @@ interface Tag {
   id: string;
   description: string;
   price?: string;
+  ebayItemNumber?: string;
+  craigslistUrl?: string;
   x: number;
   y: number;
 }
@@ -132,6 +134,9 @@ export default function LandingPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [listingTags, setListingTags] = useState<Record<string, Tag[]>>({});
   const [activeListing, setActiveListing] = useState<Listing | null>(null);
+  const [hoveredTagIndex, setHoveredTagIndex] = useState<number | null>(null);
+  const modalImgRef = useRef<HTMLImageElement>(null);
+  const [modalImgSize, setModalImgSize] = useState<{ w: number; h: number } | null>(null);
 
   useEffect(() => {
     getDocs(
@@ -157,8 +162,8 @@ export default function LandingPage() {
     }).catch(() => {});
   }, [listings]);
 
-  const openListing = (listing: Listing) => setActiveListing(listing);
-  const closeListing = () => setActiveListing(null);
+  const openListing = (listing: Listing) => { setActiveListing(listing); setModalImgSize(null); };
+  const closeListing = () => { setActiveListing(null); setHoveredTagIndex(null); setModalImgSize(null); };
 
   const [contactForm, setContactForm] = useState<ContactForm>({
     name: '',
@@ -262,6 +267,17 @@ export default function LandingPage() {
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   eBay
+                                </a>
+                              )}
+                              {tag.craigslistUrl && (
+                                <a
+                                  href={tag.craigslistUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="gallery-card__tag-ebay"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Craigslist
                                 </a>
                               )}
                             </li>
@@ -469,7 +485,30 @@ export default function LandingPage() {
               </svg>
             </button>
             <div className="listing-modal__img-wrap">
-              <img src={activeListing.url} alt={activeListing.name} className="listing-modal__img" />
+              <img
+                src={activeListing.url}
+                alt={activeListing.name}
+                className="listing-modal__img"
+                ref={modalImgRef}
+                onLoad={() => {
+                  const img = modalImgRef.current;
+                  if (img) setModalImgSize({ w: img.clientWidth, h: img.clientHeight });
+                }}
+              />
+              {modalImgSize && (listingTags[activeListing.storagePath] ?? []).map((tag, i) => {
+                const isPct = tag.x <= 1 && tag.y <= 1;
+                const left = isPct ? `${tag.x * 100}%` : `${(tag.x / modalImgSize.w) * 100}%`;
+                const top = isPct ? `${tag.y * 100}%` : `${(tag.y / modalImgSize.h) * 100}%`;
+                return (
+                  <span
+                    key={tag.id}
+                    className={`listing-modal__dot${hoveredTagIndex === i ? ' listing-modal__dot--active' : ''}`}
+                    style={{ left, top }}
+                  >
+                    {i + 1}
+                  </span>
+                );
+              })}
             </div>
             <div className="listing-modal__body">
               {(listingTags[activeListing.storagePath] ?? []).length === 0 ? (
@@ -477,7 +516,12 @@ export default function LandingPage() {
               ) : (
                 <ul className="listing-modal__tags">
                   {listingTags[activeListing.storagePath].map((tag, i) => (
-                    <li key={tag.id} className="listing-modal__tag-item">
+                    <li
+                      key={tag.id}
+                      className={`listing-modal__tag-item${hoveredTagIndex === i ? ' listing-modal__tag-item--active' : ''}`}
+                      onMouseEnter={() => setHoveredTagIndex(i)}
+                      onMouseLeave={() => setHoveredTagIndex(null)}
+                    >
                       <span className="listing-modal__tag-num">{i + 1}</span>
                       <div>
                         <div className="listing-modal__tag-desc">{tag.description}</div>
@@ -490,6 +534,16 @@ export default function LandingPage() {
                             className="listing-modal__tag-ebay"
                           >
                             View on eBay
+                          </a>
+                        )}
+                        {tag.craigslistUrl && (
+                          <a
+                            href={tag.craigslistUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="listing-modal__tag-craigslist"
+                          >
+                            Craigslist
                           </a>
                         )}
                       </div>

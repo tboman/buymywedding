@@ -21,6 +21,7 @@ interface Tag {
   description: string;
   price?: string;
   ebayItemNumber?: string;
+  craigslistUrl?: string;
   userId: string;
   imageId: string;
 }
@@ -38,6 +39,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
   const [newTagDescription, setNewTagDescription] = useState('');
   const [newTagPrice, setNewTagPrice] = useState('');
   const [newTagEbayItem, setNewTagEbayItem] = useState('');
+  const [newTagCraigslistUrl, setNewTagCraigslistUrl] = useState('');
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [pendingDelete, setPendingDelete] = useState<UploadedFile | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -79,16 +81,21 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
     setNewTagDescription('');
     setNewTagPrice('');
     setNewTagEbayItem('');
+    setNewTagCraigslistUrl('');
   };
 
   const handleImageClickForTagging = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!selectedImage || !imageRef.current) return;
     setEditingTag(null);
     const rect = imageRef.current.getBoundingClientRect();
-    setNewTagPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setNewTagPosition({
+      x: (e.clientX - rect.left) / rect.width,
+      y: (e.clientY - rect.top) / rect.height,
+    });
     setNewTagDescription('');
     setNewTagPrice('');
     setNewTagEbayItem('');
+    setNewTagCraigslistUrl('');
   };
 
   const startEditTag = (tag: Tag) => {
@@ -97,6 +104,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
     setNewTagDescription(tag.description);
     setNewTagPrice(tag.price || '');
     setNewTagEbayItem(tag.ebayItemNumber || '');
+    setNewTagCraigslistUrl(tag.craigslistUrl || '');
   };
 
   const saveEditTag = async () => {
@@ -105,6 +113,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
       description: newTagDescription.trim(),
       price: newTagPrice.trim() || null,
       ebayItemNumber: newTagEbayItem.trim() || null,
+      craigslistUrl: newTagCraigslistUrl.trim() || null,
     };
     try {
       await updateDoc(doc(db, 'tags', editingTag.id), updates);
@@ -146,6 +155,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
       description: newTagDescription.trim(),
       price: newTagPrice.trim() || undefined,
       ebayItemNumber: newTagEbayItem.trim() || undefined,
+      craigslistUrl: newTagCraigslistUrl.trim() || undefined,
     };
     try {
       const docRef = await addDoc(collection(db, 'tags'), data);
@@ -158,6 +168,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
       setNewTagDescription('');
       setNewTagPrice('');
       setNewTagEbayItem('');
+      setNewTagCraigslistUrl('');
     } catch (e) {
       console.error('Error saving tag:', e);
     }
@@ -220,7 +231,9 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
               <div
                 key={tag.id || i}
                 className={`gallery__tag${editingTag?.id === tag.id ? ' gallery__tag--editing' : ''}`}
-                style={{ left: tag.x, top: tag.y }}
+                style={tag.x > 1 || tag.y > 1
+                  ? { left: tag.x, top: tag.y }
+                  : { left: `${tag.x * 100}%`, top: `${tag.y * 100}%` }}
                 title={tag.price ? `${tag.description} — ${tag.price}` : tag.description}
                 onClick={(e) => { e.stopPropagation(); startEditTag(tag); }}
               >
@@ -238,6 +251,17 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         View on eBay
+                      </a>
+                    )}
+                    {tag.craigslistUrl && (
+                      <a
+                        href={tag.craigslistUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="gallery__tag-ebay-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Craigslist
                       </a>
                     )}
                   </div>
@@ -266,6 +290,13 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
                       value={newTagEbayItem}
                       onChange={(e) => setNewTagEbayItem(e.target.value)}
                     />
+                    <input
+                      className="gallery__tag-input"
+                      type="text"
+                      placeholder="Craigslist URL (optional)"
+                      value={newTagCraigslistUrl}
+                      onChange={(e) => setNewTagCraigslistUrl(e.target.value)}
+                    />
                     <div className="gallery__tag-form-actions">
                       <button className="gallery__tag-save" onClick={saveEditTag}>Update</button>
                       <button className="gallery__tag-cancel" onClick={() => setEditingTag(null)}>Cancel</button>
@@ -280,7 +311,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
             {newTagPosition && (
               <div
                 className="gallery__tag-form"
-                style={{ left: newTagPosition.x, top: newTagPosition.y }}
+                style={{ left: `${newTagPosition.x * 100}%`, top: `${newTagPosition.y * 100}%` }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
@@ -304,6 +335,13 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
                   placeholder="eBay item number (optional)"
                   value={newTagEbayItem}
                   onChange={(e) => setNewTagEbayItem(e.target.value)}
+                />
+                <input
+                  className="gallery__tag-input"
+                  type="text"
+                  placeholder="Craigslist URL (optional)"
+                  value={newTagCraigslistUrl}
+                  onChange={(e) => setNewTagCraigslistUrl(e.target.value)}
                 />
                 <div className="gallery__tag-form-actions">
                   <button className="gallery__tag-save" onClick={addTag}>Save tag</button>
