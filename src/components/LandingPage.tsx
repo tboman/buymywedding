@@ -27,7 +27,7 @@ const steps = [
     number: '01',
     title: 'Upload Your Photos',
     description:
-      'Connect your Google Drive and import beautiful photos of your wedding items in seconds.',
+      'Upload beautiful photos of your wedding items in seconds.',
   },
   {
     number: '02',
@@ -253,6 +253,17 @@ export default function LandingPage() {
                               <span className="gallery-card__tag-num">{i + 1}</span>
                               <span className="gallery-card__tag-desc">{tag.description}</span>
                               {tag.price && <span className="gallery-card__tag-price">{tag.price}</span>}
+                              {tag.ebayItemNumber && (
+                                <a
+                                  href={`https://www.ebay.com/itm/${tag.ebayItemNumber}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="gallery-card__tag-ebay"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  eBay
+                                </a>
+                              )}
                             </li>
                           ))}
                         </ul>
@@ -471,6 +482,16 @@ export default function LandingPage() {
                       <div>
                         <div className="listing-modal__tag-desc">{tag.description}</div>
                         {tag.price && <div className="listing-modal__tag-price">{tag.price}</div>}
+                        {tag.ebayItemNumber && (
+                          <a
+                            href={`https://www.ebay.com/itm/${tag.ebayItemNumber}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="listing-modal__tag-ebay"
+                          >
+                            View on eBay
+                          </a>
+                        )}
                       </div>
                     </li>
                   ))}

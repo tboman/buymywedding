@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut, type User } from 'firebase/auth';
+import { onAuthStateChanged, signOut, signInWithCustomToken, type User } from 'firebase/auth';
 import { auth } from './firebase';
 import Login from './components/Login';
 import PhotoUploader, { type UploadedFile } from './components/PhotoUploader';
 import PhotoGallery from './components/PhotoGallery';
 import LandingPage from './components/LandingPage';
+import EbayListings from './components/EbayListings';
 import { loadUserFiles, deleteFromStorage } from './lib/storageUpload';
 import './App.css';
 
@@ -13,6 +14,22 @@ function App() {
   const [selectedFiles, setSelectedFiles] = useState<UploadedFile[]>([]);
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [view, setView] = useState<'home' | 'dashboard'>('home');
+
+  // Handle eBay OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    if (window.location.pathname === '/auth/callback' && token) {
+      signInWithCustomToken(auth, token)
+        .then(() => {
+          window.history.replaceState({}, '', '/');
+        })
+        .catch((err) => {
+          console.error('Custom token sign-in failed:', err);
+          window.history.replaceState({}, '', '/');
+        });
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -66,7 +83,7 @@ function App() {
                 >
                   My Listings
                 </button>
-                {user.photoURL && (
+                {user.photoURL ? (
                   <img
                     className="user-avatar"
                     src={user.photoURL}
@@ -74,8 +91,12 @@ function App() {
                     width="36"
                     height="36"
                   />
+                ) : (
+                  <span className="user-avatar user-avatar--placeholder">
+                    {(user.displayName || 'U').charAt(0).toUpperCase()}
+                  </span>
                 )}
-                <span className="user-name">{user.displayName}</span>
+                <span className="user-name">{user.displayName || 'eBay User'}</span>
                 <button className="btn-logout" onClick={handleLogout}>
                   Sign out
                 </button>
@@ -89,6 +110,11 @@ function App() {
 
       {view === 'dashboard' && user ? (
         <main className="dashboard">
+          <h2 className="dashboard__title">
+            Your <span>eBay Listings</span>
+          </h2>
+          <EbayListings />
+
           <h2 className="dashboard__title">
             Your <span>Photo Gallery</span>
           </h2>

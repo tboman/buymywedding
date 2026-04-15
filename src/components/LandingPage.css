@@ -239,6 +239,13 @@
   white-space: nowrap;
 }
 
+.gallery-card__tag-ebay {
+  color: var(--color-gold-light);
+  font-size: 0.75rem;
+  text-decoration: underline;
+  white-space: nowrap;
+}
+
 /* ============================================================
    How It Works
    ============================================================ */
@@ -757,6 +764,14 @@
   color: var(--color-gold);
   font-weight: 600;
   margin-top: 2px;
+}
+
+.listing-modal__tag-ebay {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.825rem;
+  color: var(--color-gold);
+  text-decoration: underline;
 }
 
 .gallery-card {

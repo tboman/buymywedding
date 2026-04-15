@@ -8,6 +8,9 @@
   "storage": {
     "rules": "storage.rules"
   },
+  "functions": {
+    "source": "functions"
+  },
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -17,17 +20,25 @@
     ],
     "rewrites": [
       {
+        "source": "/ebayAuthRedirect",
+        "function": "ebayAuthRedirect"
+      },
+      {
+        "source": "/ebayAuthCallback",
+        "function": "ebayAuthCallback"
+      },
+      {
+        "source": "/ebayNotification",
+        "function": "ebayNotification"
+      },
+      {
+        "source": "/ebayMyListings",
+        "function": "ebayMyListings"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
-  },
-  "auth": {
-    "providers": {
-      "googleSignIn": {
-        "oAuthBrandDisplayName": "Buy My Wedding",
-        "supportEmail": "info@buymywedding.com"
-      }
-    }
   }
 }

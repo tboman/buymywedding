@@ -198,6 +198,12 @@
   display: flex;
 }
 
+.gallery__tag-ebay-link {
+  color: var(--color-gold-light);
+  font-size: 0.72rem;
+  text-decoration: underline;
+}
+
 /* New tag form popover */
 .gallery__tag-form {
   position: absolute;
@@ -270,6 +276,35 @@
 .gallery__tag-cancel:hover {
   border-color: var(--color-blush);
   color: var(--color-text);
+}
+
+.gallery__tag-delete {
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: transparent;
+  color: #dc2626;
+  border: 1px solid #dc2626;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.gallery__tag-delete:hover {
+  background: #dc2626;
+  color: white;
+}
+
+.gallery__tag--editing {
+  z-index: 25;
+}
+
+.gallery__tag-form--edit {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-top: 8px;
 }
 
 /* ── Confirmation modal ──────────────────────────────────── */

@@ -24,8 +24,6 @@ const firebaseConfig = {
   appId: "1:1069609682643:web:cb873fa8cffd00a5f53626"
 };
 
-export const googleDriveClientId = "463578001384-sf733eo0vbk3votsoha1sk305gkdppn6.apps.googleusercontent.com";
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

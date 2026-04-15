@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { db, auth } from '../firebase';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { UploadedFile } from './PhotoUploader';
 
 // Use storagePath as the stable imageId when available, fall back to local id
@@ -20,6 +20,7 @@ interface Tag {
   y: number;
   description: string;
   price?: string;
+  ebayItemNumber?: string;
   userId: string;
   imageId: string;
 }
@@ -36,6 +37,8 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
   const [newTagPosition, setNewTagPosition] = useState<{ x: number; y: number } | null>(null);
   const [newTagDescription, setNewTagDescription] = useState('');
   const [newTagPrice, setNewTagPrice] = useState('');
+  const [newTagEbayItem, setNewTagEbayItem] = useState('');
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [pendingDelete, setPendingDelete] = useState<UploadedFile | null>(null);
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -75,14 +78,62 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
     setNewTagPosition(null);
     setNewTagDescription('');
     setNewTagPrice('');
+    setNewTagEbayItem('');
   };
 
   const handleImageClickForTagging = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!selectedImage || !imageRef.current) return;
+    setEditingTag(null);
     const rect = imageRef.current.getBoundingClientRect();
     setNewTagPosition({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setNewTagDescription('');
     setNewTagPrice('');
+    setNewTagEbayItem('');
+  };
+
+  const startEditTag = (tag: Tag) => {
+    setNewTagPosition(null);
+    setEditingTag(tag);
+    setNewTagDescription(tag.description);
+    setNewTagPrice(tag.price || '');
+    setNewTagEbayItem(tag.ebayItemNumber || '');
+  };
+
+  const saveEditTag = async () => {
+    if (!editingTag?.id || !selectedImage || !newTagDescription.trim()) return;
+    const updates = {
+      description: newTagDescription.trim(),
+      price: newTagPrice.trim() || null,
+      ebayItemNumber: newTagEbayItem.trim() || null,
+    };
+    try {
+      await updateDoc(doc(db, 'tags', editingTag.id), updates);
+      const imgId = imageId(selectedImage);
+      setImageTags((prev) => ({
+        ...prev,
+        [imgId]: (prev[imgId] || []).map((t) =>
+          t.id === editingTag.id ? { ...t, ...updates } : t
+        ),
+      }));
+      setEditingTag(null);
+    } catch (e) {
+      console.error('Error updating tag:', e);
+    }
+  };
+
+  const deleteTag = async () => {
+    if (!editingTag?.id || !selectedImage) return;
+    try {
+      await deleteDoc(doc(db, 'tags', editingTag.id));
+      const imgId = imageId(selectedImage);
+      setImageTags((prev) => ({
+        ...prev,
+        [imgId]: (prev[imgId] || []).filter((t) => t.id !== editingTag.id),
+      }));
+      setEditingTag(null);
+    } catch (e) {
+      console.error('Error deleting tag:', e);
+    }
   };
 
   const addTag = async () => {
@@ -94,6 +145,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
       y: newTagPosition.y,
       description: newTagDescription.trim(),
       price: newTagPrice.trim() || undefined,
+      ebayItemNumber: newTagEbayItem.trim() || undefined,
     };
     try {
       const docRef = await addDoc(collection(db, 'tags'), data);
@@ -105,6 +157,7 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
       setNewTagPosition(null);
       setNewTagDescription('');
       setNewTagPrice('');
+      setNewTagEbayItem('');
     } catch (e) {
       console.error('Error saving tag:', e);
     }
@@ -166,16 +219,60 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
             {imageTags[imageId(selectedImage)]?.map((tag, i) => (
               <div
                 key={tag.id || i}
-                className="gallery__tag"
+                className={`gallery__tag${editingTag?.id === tag.id ? ' gallery__tag--editing' : ''}`}
                 style={{ left: tag.x, top: tag.y }}
                 title={tag.price ? `${tag.description} — ${tag.price}` : tag.description}
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); startEditTag(tag); }}
               >
                 <span className="gallery__tag-dot">{i + 1}</span>
-                <div className="gallery__tag-tooltip">
-                  <strong>{tag.description}</strong>
-                  {tag.price && <span>{tag.price}</span>}
-                </div>
+                {editingTag?.id !== tag.id && (
+                  <div className="gallery__tag-tooltip">
+                    <strong>{tag.description}</strong>
+                    {tag.price && <span>{tag.price}</span>}
+                    {tag.ebayItemNumber && (
+                      <a
+                        href={`https://www.ebay.com/itm/${tag.ebayItemNumber}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="gallery__tag-ebay-link"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        View on eBay
+                      </a>
+                    )}
+                  </div>
+                )}
+                {editingTag?.id === tag.id && (
+                  <div className="gallery__tag-form gallery__tag-form--edit" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      className="gallery__tag-input"
+                      type="text"
+                      placeholder="Item name"
+                      value={newTagDescription}
+                      onChange={(e) => setNewTagDescription(e.target.value)}
+                      autoFocus
+                    />
+                    <input
+                      className="gallery__tag-input"
+                      type="text"
+                      placeholder="Price (e.g. £120)"
+                      value={newTagPrice}
+                      onChange={(e) => setNewTagPrice(e.target.value)}
+                    />
+                    <input
+                      className="gallery__tag-input"
+                      type="text"
+                      placeholder="eBay item number (optional)"
+                      value={newTagEbayItem}
+                      onChange={(e) => setNewTagEbayItem(e.target.value)}
+                    />
+                    <div className="gallery__tag-form-actions">
+                      <button className="gallery__tag-save" onClick={saveEditTag}>Update</button>
+                      <button className="gallery__tag-cancel" onClick={() => setEditingTag(null)}>Cancel</button>
+                      <button className="gallery__tag-delete" onClick={deleteTag}>Delete</button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
 
@@ -200,6 +297,13 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
                   placeholder="Price (e.g. £120)"
                   value={newTagPrice}
                   onChange={(e) => setNewTagPrice(e.target.value)}
+                />
+                <input
+                  className="gallery__tag-input"
+                  type="text"
+                  placeholder="eBay item number (optional)"
+                  value={newTagEbayItem}
+                  onChange={(e) => setNewTagEbayItem(e.target.value)}
                 />
                 <div className="gallery__tag-form-actions">
                   <button className="gallery__tag-save" onClick={addTag}>Save tag</button>
