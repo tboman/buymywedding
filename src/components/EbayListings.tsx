@@ -62,7 +62,19 @@ export default function EbayListings() {
   }
 
   if (listings.length === 0) {
-    return <p className="ebay-listings__empty">No active eBay listings found.</p>;
+    return (
+      <div className="ebay-listings__empty">
+        <p>You don't have any active eBay listings yet.</p>
+        <a
+          className="ebay-listings__create-link"
+          href="https://www.ebay.com/sl/prelist/suggest"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Create a listing on eBay
+        </a>
+      </div>
+    );
   }
 
   return (
