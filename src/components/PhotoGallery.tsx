@@ -159,9 +159,9 @@ const PhotoGallery: React.FC<PhotoGalleryProps> = ({ files, onDelete }) => {
       x: newTagPosition.x,
       y: newTagPosition.y,
       description: newTagDescription.trim(),
-      price: newTagPrice.trim() || undefined,
-      ebayItemNumber: newTagEbayItem.trim() || undefined,
-      craigslistUrl: newTagCraigslistUrl.trim() || undefined,
+      ...(newTagPrice.trim() && { price: newTagPrice.trim() }),
+      ...(newTagEbayItem.trim() && { ebayItemNumber: newTagEbayItem.trim() }),
+      ...(newTagCraigslistUrl.trim() && { craigslistUrl: newTagCraigslistUrl.trim() }),
     };
     try {
       const docRef = await addDoc(collection(db, 'tags'), data);
