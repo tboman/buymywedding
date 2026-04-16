@@ -110,10 +110,14 @@ function App() {
 
       {view === 'dashboard' && user ? (
         <main className="dashboard">
-          <h2 className="dashboard__title">
-            Your <span>eBay Listings</span>
-          </h2>
-          <EbayListings />
+          {user.uid.startsWith('ebay:') && (
+            <>
+              <h2 className="dashboard__title">
+                Your <span>eBay Listings</span>
+              </h2>
+              <EbayListings />
+            </>
+          )}
 
           <h2 className="dashboard__title">
             Your <span>Photo Gallery</span>
