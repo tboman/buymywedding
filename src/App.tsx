@@ -96,7 +96,7 @@ function App() {
                     {(user.displayName || 'U').charAt(0).toUpperCase()}
                   </span>
                 )}
-                <span className="user-name">{user.displayName || 'eBay User'}</span>
+                <span className="user-name">{user.displayName || 'User'}</span>
                 <button className="btn-logout" onClick={handleLogout}>
                   Sign out
                 </button>

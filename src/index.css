@@ -178,6 +178,23 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-md);
 }
 
+.btn-signin--google {
+  background: white;
+  color: var(--color-text);
+  border: 1.5px solid var(--color-border);
+}
+
+.btn-signin--google:hover {
+  background: var(--color-bg-warm);
+  border-color: var(--color-border);
+}
+
+.login-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 /* ============================================================
    Section Utilities
    ============================================================ */
